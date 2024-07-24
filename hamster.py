@@ -54,7 +54,7 @@ class Hamster(requests.Session):
         }
 
 
-def hamster():
+def main():
     with open(".hamster-tokens.txt", "rt", encoding="UTF-8") as f:
         tokens = [line.strip() for line in f.readlines()]
 
@@ -72,4 +72,4 @@ def hamster():
 
 
 if __name__ == "__main__":
-    hamster()
+    main()
