@@ -239,7 +239,7 @@ class CEX(requests.Session):
                     "devAuthData": self.get_user_telegram_id(auth_data),
                     "authData": auth_data,
                     "data": {"taskId": id},
-                }
+                }hamster
 
                 response = self.post(
                     "https://cexp.cex.io/api/claimTask",
@@ -253,7 +253,7 @@ class CEX(requests.Session):
         return outputs
 
 
-def cex_main():
+def main():
     cex = CEX()
 
     cex.claim_taps()  # Claim Taps
@@ -282,4 +282,4 @@ def cex_main():
 
 
 if __name__ == "__main__":
-    cex_main()
+    main()
