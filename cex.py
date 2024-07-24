@@ -5,7 +5,7 @@ from typing import Literal
 import requests
 from rich.console import Console
 
-from functions import json_decode_error_handler, fragment2dct
+from functions import json_decode_error_handler, fragment2dct, send_email
 
 console: Console = Console()
 
@@ -42,6 +42,23 @@ class CEX(requests.Session):
         )
 
         return response.json()
+
+    def get_users_info(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+            user_info: dict = self.get_user_info(auth_data)
+
+            outputs.append(user_info)
+
+        return outputs
+
+    def get_user_telegram_id(self, auth_data: str):
+        user_info = self.get_user_info(auth_data)
+        user_data = user_info.get("data", {})
+
+        user_telegram_id = user_data.get("userTelegramId")
+
+        return user_telegram_id
 
     @json_decode_error_handler
     def claim_taps(self):
@@ -147,7 +164,7 @@ class CEX(requests.Session):
     def get_tasks(
         self,
         auth_data: str,
-        state: Literal["NONE", "ReadyToCheck", "ReadyToClaim"] = "NONE",
+        state: Literal["NONE", "ReadyToCheck", "ReadyToClaim", "Claimed"] = "NONE",
     ):
         user_info = self.get_user_info(auth_data)
         user_data = user_info.get("data")
@@ -167,7 +184,7 @@ class CEX(requests.Session):
 
                 if "invite" in id:
                     continue
-                
+
                 data = {
                     "devAuthData": self.get_user_telegram_id(auth_data),
                     "authData": auth_data,
@@ -235,23 +252,34 @@ class CEX(requests.Session):
 
         return outputs
 
-    def get_user_telegram_id(self, auth_data: str):
-        user_info = self.get_user_info(auth_data)
-        user_data = user_info.get("data", {})
-        user_telegram_id = user_data.get("userTelegramId")
 
-        return user_telegram_id
-
-
-def main():
+def cex_main():
     cex = CEX()
-    # console.print(cex.start_farming())
-    # console.print(cex.claim_farming())
 
-    console.print(cex.start_tasks())
-    console.print(cex.check_tasks())
-    console.print(cex.claim_tasks())
+    cex.claim_taps()  # Claim Taps
+
+    cex.start_farming()  # Start farming
+    cex.claim_farming()  # Claim farming rewards
+
+    cex.start_tasks()  # Start tasks
+    cex.check_tasks()  # Check tasks
+    cex.claim_tasks()  # Claim tasks
+
+    users_info = cex.get_users_info()  # Get users info
+
+    string = ""
+    for user_info in users_info:
+        user_data = user_info.get("data", {})
+
+        user_data.pop("tasks")
+        user_data.pop("inviteUrl")
+        user_data.pop("shareDetails")
+
+        string += "\n".join([f"{key}: {value}" for key, value in user_data.items()])
+        string += "\n\n\n"
+
+    send_email("CEX.IO Power Tap", string)
 
 
 if __name__ == "__main__":
-    main()
+    cex_main()
