@@ -1,0 +1,257 @@
+import json
+import time
+from typing import Literal
+
+import requests
+from rich.console import Console
+
+from functions import json_decode_error_handler, fragment2dct
+
+console: Console = Console()
+
+
+class CEX(requests.Session):
+
+    def __init__(self):
+        # initialize the super class
+        super().__init__()
+
+        # get auth data from file
+        with open(".cex-auth-data.txt", "rt") as f:
+            self.auth_data_lst = [line.strip() for line in f.readlines()]
+
+    @json_decode_error_handler
+    def get_user_info(self, auth_data: str):
+        fragment = fragment2dct(auth_data)
+        user = fragment.get("user", {})
+        user_id = user.get("id")
+
+        data = {
+            "devAuthData": user_id,
+            "authData": auth_data,
+            "data": {},
+            "platform": "android",
+        }
+
+        response = self.post(
+            "https://cexp.cex.io/api/getUserInfo",
+            data=json.dumps(data),
+            headers={
+                "Content-Type": "application/json",
+            },
+        )
+
+        return response.json()
+
+    @json_decode_error_handler
+    def claim_taps(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+            user_info = self.get_user_info(auth_data)
+            user_data = user_info.get("data")
+            available_taps = user_data.get("availableTaps")
+
+            if not available_taps:
+                outputs.append("No enough taps available, please invite more friends.")
+                continue
+
+            data = {
+                "devAuthData": self.get_user_telegram_id(auth_data),
+                "authData": auth_data,
+                "data": {"taps": available_taps},
+            }
+
+            response = self.post(
+                "https://cexp.cex.io/api/claimTaps",
+                data=json.dumps(data),
+                headers={"Content-Type": "application/json"},
+            )
+            outputs.append(response.json())
+
+        mapper = lambda output: (
+            {
+                "balance": output.get("data", {}).get("balance"),
+                "first_name": output.get("data", {}).get("first_name"),
+                "last_name": output.get("data", {}).get("last_name"),
+                "userTelegramId": output.get("data", {}).get("userTelegramId"),
+            }
+            if isinstance(output, dict)
+            else output
+        )
+        outputs = list(map(mapper, outputs))
+
+        return outputs
+
+    @json_decode_error_handler
+    def start_farming(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+
+            user_info = self.get_user_info(auth_data)
+            user_data = user_info.get("data", {})
+
+            if (
+                user_data.get("farmStartedAt")
+                and not user_data.get("farmReward", "") == "0.0"
+            ):
+                outputs.append(f"Farm is already started.")
+                continue
+
+            data = {
+                "devAuthData": self.get_user_telegram_id(auth_data),
+                "authData": auth_data,
+                "data": {},
+            }
+
+            response = self.post(
+                "https://cexp.cex.io/api/startFarm",
+                data=json.dumps(data),
+                headers={"Content-Type": "application/json"},
+            )
+
+            outputs.append(response.json())
+
+        # return outputs
+        return outputs
+
+    def claim_farming(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+            user_info = self.get_user_info(auth_data)
+            user_data = user_info.get("data", {})
+            # farm_started_at = user_data.get("farmStartedAt")
+            farm_reward = user_data.get("farmReward")
+            min_random_farm_reward = user_data.get("minRandomFarmReward", 400)
+            max_random_farm_reward = user_data.get("maxRandomFarmReward", 800)
+
+            if min_random_farm_reward < float(farm_reward) < max_random_farm_reward:
+                data = {
+                    "devAuthData": self.get_user_telegram_id(auth_data),
+                    "authData": auth_data,
+                    "data": {},
+                }
+
+                response = self.post(
+                    "https://cexp.cex.io/api/claimFarm",
+                    data=json.dumps(data),
+                    headers={
+                        "Content-Type": "application/json",
+                    },
+                )
+                outputs.append(response.json())
+            else:
+                outputs.append(f"Not enough farm reward: {farm_reward}")
+
+        return outputs
+
+    def get_tasks(
+        self,
+        auth_data: str,
+        state: Literal["NONE", "ReadyToCheck", "ReadyToClaim"] = "NONE",
+    ):
+        user_info = self.get_user_info(auth_data)
+        user_data = user_info.get("data")
+        tasks = user_data.get("tasks")
+
+        return {
+            key: value for key, value in tasks.items() if value.get("state") == state
+        }
+
+    @json_decode_error_handler
+    def start_tasks(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+            tasks = self.get_tasks(auth_data)
+
+            for id in tasks.keys():
+
+                if "invite" in id:
+                    continue
+                
+                data = {
+                    "devAuthData": self.get_user_telegram_id(auth_data),
+                    "authData": auth_data,
+                    "data": {"taskId": id},
+                }
+
+                response = self.post(
+                    "https://cexp.cex.io/api/startTask",
+                    data=json.dumps(data),
+                    headers={
+                        "Content-Type": "application/json",
+                    },
+                )
+                result = response.json()
+
+                outputs.append(result)
+
+        return outputs
+
+    @json_decode_error_handler
+    def check_tasks(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+            tasks = self.get_tasks(auth_data, "ReadyToCheck")
+
+            for id in tasks.keys():
+                data = {
+                    "devAuthData": self.get_user_telegram_id(auth_data),
+                    "authData": auth_data,
+                    "data": {"taskId": id},
+                }
+
+                response = self.post(
+                    "https://cexp.cex.io/api/checkTask",
+                    data=json.dumps(data),
+                    headers={
+                        "Content-Type": "application/json",
+                    },
+                )
+                outputs.append(response.json())
+
+        return outputs
+
+    @json_decode_error_handler
+    def claim_tasks(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+            tasks = self.get_tasks(auth_data, "ReadyToClaim")
+
+            for id in tasks.keys():
+                data = {
+                    "devAuthData": self.get_user_telegram_id(auth_data),
+                    "authData": auth_data,
+                    "data": {"taskId": id},
+                }
+
+                response = self.post(
+                    "https://cexp.cex.io/api/claimTask",
+                    data=json.dumps(data),
+                    headers={
+                        "Content-Type": "application/json",
+                    },
+                )
+                outputs.append(response.json())
+
+        return outputs
+
+    def get_user_telegram_id(self, auth_data: str):
+        user_info = self.get_user_info(auth_data)
+        user_data = user_info.get("data", {})
+        user_telegram_id = user_data.get("userTelegramId")
+
+        return user_telegram_id
+
+
+def main():
+    cex = CEX()
+    # console.print(cex.start_farming())
+    # console.print(cex.claim_farming())
+
+    console.print(cex.start_tasks())
+    console.print(cex.check_tasks())
+    console.print(cex.claim_tasks())
+
+
+if __name__ == "__main__":
+    main()
