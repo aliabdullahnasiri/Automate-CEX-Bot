@@ -3,11 +3,8 @@ import time
 from typing import Literal
 
 import requests
-from rich.console import Console
 
 from functions import json_decode_error_handler, fragment2dct, send_email
-
-console: Console = Console()
 
 
 class CEX(requests.Session):
