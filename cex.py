@@ -253,16 +253,17 @@ class CEX(requests.Session):
 def main():
     cex = CEX()
 
-    cex.claim_taps()  # Claim Taps
+    cex.claim_taps()
+    
+    cex.start_farming()
+    cex.claim_farming()
+    cex.start_farming()
 
-    cex.start_farming()  # Start farming
-    cex.claim_farming()  # Claim farming rewards
+    cex.start_tasks()
+    cex.check_tasks()
+    cex.claim_tasks()
 
-    cex.start_tasks()  # Start tasks
-    cex.check_tasks()  # Check tasks
-    cex.claim_tasks()  # Claim tasks
-
-    users_info = cex.get_users_info()  # Get users info
+    users_info = cex.get_users_info()
 
     string = ""
     for user_info in users_info:
