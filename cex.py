@@ -239,7 +239,7 @@ class CEX(requests.Session):
                     "devAuthData": self.get_user_telegram_id(auth_data),
                     "authData": auth_data,
                     "data": {"taskId": id},
-                }hamster
+                }
 
                 response = self.post(
                     "https://cexp.cex.io/api/claimTask",
