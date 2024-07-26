@@ -1,4 +1,5 @@
 import json
+import re
 import time
 from typing import Literal
 
@@ -17,8 +18,7 @@ class CEX(requests.Session):
         with open(".cex-auth-data.txt", "rt") as f:
             self.auth_data_lst = [line.strip() for line in f.readlines()]
 
-    @json_decode_error_handler
-    def get_user_info(self, auth_data: str):
+    def get_user_info(self, auth_data: str) -> dict:
         fragment = fragment2dct(auth_data)
         user = fragment.get("user", {})
         user_id = user.get("id")
@@ -38,7 +38,10 @@ class CEX(requests.Session):
             },
         )
 
-        return response.json()
+        print(
+            f"In `get_user_info` the post request status code was {response.status_code}."
+        )
+        return response.json() if response.status_code == 200 else {}
 
     def get_users_info(self):
         outputs = []
@@ -49,7 +52,7 @@ class CEX(requests.Session):
 
         return outputs
 
-    def get_user_telegram_id(self, auth_data: str):
+    def get_user_telegram_id(self, auth_data: str) -> int:
         user_info = self.get_user_info(auth_data)
         user_data = user_info.get("data", {})
 
@@ -57,12 +60,11 @@ class CEX(requests.Session):
 
         return user_telegram_id
 
-    @json_decode_error_handler
     def claim_taps(self):
         outputs = []
         for auth_data in self.auth_data_lst:
             user_info = self.get_user_info(auth_data)
-            user_data = user_info.get("data")
+            user_data = user_info.get("data", {})
             available_taps = user_data.get("availableTaps")
 
             if not available_taps:
@@ -80,23 +82,25 @@ class CEX(requests.Session):
                 data=json.dumps(data),
                 headers={"Content-Type": "application/json"},
             )
-            outputs.append(response.json())
 
-        mapper = lambda output: (
-            {
-                "balance": output.get("data", {}).get("balance"),
-                "first_name": output.get("data", {}).get("first_name"),
-                "last_name": output.get("data", {}).get("last_name"),
-                "userTelegramId": output.get("data", {}).get("userTelegramId"),
-            }
-            if isinstance(output, dict)
-            else output
-        )
+            if response.status_code == 200:
+                outputs.append(response.json())
+
+        def mapper(output):
+            if isinstance(output, dict):
+                return {
+                    "balance": output.get("data", {}).get("balance"),
+                    "first_name": output.get("data", {}).get("first_name"),
+                    "last_name": output.get("data", {}).get("last_name"),
+                    "userTelegramId": output.get("data", {}).get("userTelegramId"),
+                }
+            else:
+                return output
+
         outputs = list(map(mapper, outputs))
 
         return outputs
 
-    @json_decode_error_handler
     def start_farming(self):
         outputs = []
         for auth_data in self.auth_data_lst:
@@ -123,7 +127,8 @@ class CEX(requests.Session):
                 headers={"Content-Type": "application/json"},
             )
 
-            outputs.append(response.json())
+            if response.status_code == 200:
+                outputs.append(response.json())
 
         # return outputs
         return outputs
@@ -152,9 +157,16 @@ class CEX(requests.Session):
                         "Content-Type": "application/json",
                     },
                 )
-                outputs.append(response.json())
+
+                if response.status_code == 200:
+                    outputs.append(response.json())
             else:
-                outputs.append(f"Not enough farm reward: {farm_reward}")
+                outputs.append(
+                    {
+                        "status": "error",
+                        "msg": f"Not enough farm reward: {farm_reward}",
+                    }
+                )
 
         return outputs
 
@@ -164,14 +176,13 @@ class CEX(requests.Session):
         state: Literal["NONE", "ReadyToCheck", "ReadyToClaim", "Claimed"] = "NONE",
     ):
         user_info = self.get_user_info(auth_data)
-        user_data = user_info.get("data")
-        tasks = user_data.get("tasks")
+        user_data = user_info.get("data", {})
+        tasks = user_data.get("tasks", [])
 
         return {
             key: value for key, value in tasks.items() if value.get("state") == state
         }
 
-    @json_decode_error_handler
     def start_tasks(self):
         outputs = []
         for auth_data in self.auth_data_lst:
@@ -195,13 +206,13 @@ class CEX(requests.Session):
                         "Content-Type": "application/json",
                     },
                 )
-                result = response.json()
 
-                outputs.append(result)
+                if response.status_code == 200:
+                    result = response.json()
+                    outputs.append(result)
 
         return outputs
 
-    @json_decode_error_handler
     def check_tasks(self):
         outputs = []
         for auth_data in self.auth_data_lst:
@@ -221,11 +232,12 @@ class CEX(requests.Session):
                         "Content-Type": "application/json",
                     },
                 )
-                outputs.append(response.json())
+
+                if response.status_code == 200:
+                    outputs.append(response.json())
 
         return outputs
 
-    @json_decode_error_handler
     def claim_tasks(self):
         outputs = []
         for auth_data in self.auth_data_lst:
@@ -245,7 +257,9 @@ class CEX(requests.Session):
                         "Content-Type": "application/json",
                     },
                 )
-                outputs.append(response.json())
+
+                if response.status_code == 200:
+                    outputs.append(response.json())
 
         return outputs
 
@@ -253,16 +267,28 @@ class CEX(requests.Session):
 def main():
     cex = CEX()
 
+    print("Claim Taps...")
     cex.claim_taps()
-    
-    cex.start_farming()
-    cex.claim_farming()
+
+    print("Start farming...")
     cex.start_farming()
 
+    print("Claim farming...")
+    cex.claim_farming()
+
+    print("Start farming...")
+    cex.start_farming()
+
+    print("Start tasks...")
     cex.start_tasks()
+
+    print("Check tasks...")
     cex.check_tasks()
+
+    print("Claim tasks...")
     cex.claim_tasks()
 
+    print("Getting users information...")
     users_info = cex.get_users_info()
 
     string = ""
