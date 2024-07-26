@@ -1,5 +1,3 @@
-from cex import main as cex_main
-from hamster import main as hamster_main
+from cex import main as cex
 
-cex_main()
-hamster_main()
+cex()
