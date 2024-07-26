@@ -1,11 +1,9 @@
 import json
-import re
-import time
 from typing import Literal
 
 import requests
 
-from functions import json_decode_error_handler, fragment2dct, send_email
+from functions import fragment2dct, send_email
 
 
 class CEX(requests.Session):
@@ -30,18 +28,29 @@ class CEX(requests.Session):
             "platform": "android",
         }
 
-        response = self.post(
-            "https://cexp.cex.io/api/getUserInfo",
-            data=json.dumps(data),
-            headers={
-                "Content-Type": "application/json",
-            },
-        )
+        while True:
+            response = self.post(
+                "https://cexp.cex.io/api/getUserInfo",
+                data=json.dumps(data),
+                headers={
+                    "Content-Type": "application/json",
+                },
+            )
 
-        print(
-            f"In `get_user_info` the post request status code was {response.status_code}."
-        )
-        return response.json() if response.status_code == 200 else {}
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 429:
+                print(
+                    "Too Many Requests - Please slow down your requests. Try again later."
+                )
+                print("Executing sleep command for 32 seconds.")
+                __import__("time").sleep(32)
+                print("Sleep command completed")
+
+                # continue
+                continue
+            else:
+                break
 
     def get_users_info(self):
         outputs = []
@@ -77,14 +86,28 @@ class CEX(requests.Session):
                 "data": {"taps": available_taps},
             }
 
-            response = self.post(
-                "https://cexp.cex.io/api/claimTaps",
-                data=json.dumps(data),
-                headers={"Content-Type": "application/json"},
-            )
+            while True:
+                response = self.post(
+                    "https://cexp.cex.io/api/claimTaps",
+                    data=json.dumps(data),
+                    headers={"Content-Type": "application/json"},
+                )
 
-            if response.status_code == 200:
-                outputs.append(response.json())
+                if response.status_code == 200:
+                    outputs.append(response.json())
+                elif response.status_code == 429:
+                    print(
+                        "Too Many Requests - Please slow down your requests. Try again later."
+                    )
+                    print("Executing sleep command for 32 seconds.")
+                    __import__("time").sleep(32)
+                    print("Sleep command completed")
+
+                    # continue
+                    continue
+                else:
+                    # break
+                    break
 
         def mapper(output):
             if isinstance(output, dict):
@@ -121,14 +144,24 @@ class CEX(requests.Session):
                 "data": {},
             }
 
-            response = self.post(
-                "https://cexp.cex.io/api/startFarm",
-                data=json.dumps(data),
-                headers={"Content-Type": "application/json"},
-            )
+            while True:
+                response = self.post(
+                    "https://cexp.cex.io/api/startFarm",
+                    data=json.dumps(data),
+                    headers={"Content-Type": "application/json"},
+                )
 
-            if response.status_code == 200:
-                outputs.append(response.json())
+                if response.status_code == 200:
+                    outputs.append(response.json())
+                elif response.status_code == 429:
+                    print(
+                        "Too Many Requests - Please slow down your requests. Try again later."
+                    )
+                    print("Executing sleep command for 32 seconds.")
+                    __import__("time").sleep(32)
+                    print("Sleep command completed")
+                else:
+                    break
 
         # return outputs
         return outputs
@@ -150,23 +183,26 @@ class CEX(requests.Session):
                     "data": {},
                 }
 
-                response = self.post(
-                    "https://cexp.cex.io/api/claimFarm",
-                    data=json.dumps(data),
-                    headers={
-                        "Content-Type": "application/json",
-                    },
-                )
+                while True:
+                    response = self.post(
+                        "https://cexp.cex.io/api/claimFarm",
+                        data=json.dumps(data),
+                        headers={
+                            "Content-Type": "application/json",
+                        },
+                    )
 
-                if response.status_code == 200:
-                    outputs.append(response.json())
-            else:
-                outputs.append(
-                    {
-                        "status": "error",
-                        "msg": f"Not enough farm reward: {farm_reward}",
-                    }
-                )
+                    if response.status_code == 200:
+                        outputs.append(response.json())
+                    elif response.status_code == 429:
+                        print(
+                            "Too Many Requests - Please slow down your requests. Try again later."
+                        )
+                        print("Executing sleep command for 32 seconds.")
+                        __import__("time").sleep(32)
+                        print("Sleep command completed")
+                    else:
+                        break
 
         return outputs
 
@@ -199,17 +235,27 @@ class CEX(requests.Session):
                     "data": {"taskId": id},
                 }
 
-                response = self.post(
-                    "https://cexp.cex.io/api/startTask",
-                    data=json.dumps(data),
-                    headers={
-                        "Content-Type": "application/json",
-                    },
-                )
+                while True:
+                    response = self.post(
+                        "https://cexp.cex.io/api/startTask",
+                        data=json.dumps(data),
+                        headers={
+                            "Content-Type": "application/json",
+                        },
+                    )
 
-                if response.status_code == 200:
-                    result = response.json()
-                    outputs.append(result)
+                    if response.status_code == 200:
+                        result = response.json()
+                        outputs.append(result)
+                    elif response.status_code == 429:
+                        print(
+                            "Too Many Requests - Please slow down your requests. Try again later."
+                        )
+                        print("Executing sleep command for 32 seconds.")
+                        __import__("time").sleep(32)
+                        print("Sleep command completed")
+                    else:
+                        break
 
         return outputs
 
@@ -225,16 +271,26 @@ class CEX(requests.Session):
                     "data": {"taskId": id},
                 }
 
-                response = self.post(
-                    "https://cexp.cex.io/api/checkTask",
-                    data=json.dumps(data),
-                    headers={
-                        "Content-Type": "application/json",
-                    },
-                )
+                while True:
+                    response = self.post(
+                        "https://cexp.cex.io/api/checkTask",
+                        data=json.dumps(data),
+                        headers={
+                            "Content-Type": "application/json",
+                        },
+                    )
 
-                if response.status_code == 200:
-                    outputs.append(response.json())
+                    if response.status_code == 200:
+                        outputs.append(response.json())
+                    elif response.status_code == 429:
+                        print(
+                            "Too Many Requests - Please slow down your requests. Try again later."
+                        )
+                        print("Executing sleep command for 32 seconds.")
+                        __import__("time").sleep(32)
+                        print("Sleep command completed")
+                    else:
+                        break
 
         return outputs
 
@@ -250,16 +306,26 @@ class CEX(requests.Session):
                     "data": {"taskId": id},
                 }
 
-                response = self.post(
-                    "https://cexp.cex.io/api/claimTask",
-                    data=json.dumps(data),
-                    headers={
-                        "Content-Type": "application/json",
-                    },
-                )
+                while True:
+                    response = self.post(
+                        "https://cexp.cex.io/api/claimTask",
+                        data=json.dumps(data),
+                        headers={
+                            "Content-Type": "application/json",
+                        },
+                    )
 
-                if response.status_code == 200:
-                    outputs.append(response.json())
+                    if response.status_code == 200:
+                        outputs.append(response.json())
+                    elif response.status_code == 429:
+                        print(
+                            "Too Many Requests - Please slow down your requests. Try again later."
+                        )
+                        print("Executing sleep command for 32 seconds.")
+                        __import__("time").sleep(32)
+                        print("Sleep command completed")
+                    else:
+                        break
 
         return outputs
 
