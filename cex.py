@@ -3,7 +3,7 @@ from typing import Literal
 
 import requests
 
-from functions import fragment2dct, send_email
+from functions import fragment2dct, send_email, get_random_socks_proxy
 
 
 class CEX(requests.Session):
@@ -35,6 +35,7 @@ class CEX(requests.Session):
                 headers={
                     "Content-Type": "application/json",
                 },
+                proxies=get_random_socks_proxy(),
             )
 
             if response.status_code == 200:
@@ -91,6 +92,7 @@ class CEX(requests.Session):
                     "https://cexp.cex.io/api/claimTaps",
                     data=json.dumps(data),
                     headers={"Content-Type": "application/json"},
+                    proxies=get_random_socks_proxy(),
                 )
 
                 if response.status_code == 200:
@@ -149,6 +151,7 @@ class CEX(requests.Session):
                     "https://cexp.cex.io/api/startFarm",
                     data=json.dumps(data),
                     headers={"Content-Type": "application/json"},
+                    proxies=get_random_socks_proxy(),
                 )
 
                 if response.status_code == 200:
@@ -190,6 +193,7 @@ class CEX(requests.Session):
                         headers={
                             "Content-Type": "application/json",
                         },
+                        proxies=get_random_socks_proxy(),
                     )
 
                     if response.status_code == 200:
@@ -242,6 +246,7 @@ class CEX(requests.Session):
                         headers={
                             "Content-Type": "application/json",
                         },
+                        proxies=get_random_socks_proxy(),
                     )
 
                     if response.status_code == 200:
@@ -265,6 +270,7 @@ class CEX(requests.Session):
             tasks = self.get_tasks(auth_data, "ReadyToCheck")
 
             for id in tasks.keys():
+                print(id)
                 data = {
                     "devAuthData": self.get_user_telegram_id(auth_data),
                     "authData": auth_data,
@@ -278,6 +284,7 @@ class CEX(requests.Session):
                         headers={
                             "Content-Type": "application/json",
                         },
+                        proxies=get_random_socks_proxy(),
                     )
 
                     if response.status_code == 200:
@@ -313,6 +320,7 @@ class CEX(requests.Session):
                         headers={
                             "Content-Type": "application/json",
                         },
+                        proxies=get_random_socks_proxy(),
                     )
 
                     if response.status_code == 200:
