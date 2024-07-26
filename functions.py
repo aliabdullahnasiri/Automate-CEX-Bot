@@ -1,9 +1,12 @@
 from datetime import datetime
 import json.tool
 
+from typing import Dict, List, Literal, Union
+
 import json.scanner
 import requests
 
+import random
 
 import urllib.parse
 import json
@@ -83,3 +86,33 @@ def fragment2dct(fragment: str) -> dict:
             ...
 
     return dct
+
+
+def check_socks_proxy(proxy) -> Union[bool, None]:
+    url = (
+        "http://httpbin.org/ip"  # This endpoint returns the IP address of the requester
+    )
+    proxies = {
+        "socks4": proxy,
+    }
+    try:
+        response = requests.get(url, proxies=proxies, timeout=5)
+        return True if response.status_code == 200 else False
+    except requests.exceptions.RequestException:
+        ...
+
+
+def get_random_socks_proxy() -> dict | None:
+    with open("proxies.txt", "rt", encoding="UTF-8") as file:
+        lines: List[str] = [line.strip() for line in file.readlines()]
+
+        count = 0
+        while count < 10:
+            proxy = random.choice(lines)
+            if check_socks_proxy(proxy):
+                print(f"Proxy {proxy} is working.")
+                return {"socks4": proxy}
+
+            count += 1
+
+        return None
