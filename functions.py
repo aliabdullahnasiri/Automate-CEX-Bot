@@ -1,15 +1,12 @@
-from datetime import datetime
-import json.tool
-
-from typing import Dict, List, Literal, Union
-
-import json.scanner
-import requests
-
-import random
-
-import urllib.parse
 import json
+import json.scanner
+import json.tool
+import random
+import urllib.parse
+from datetime import datetime
+from typing import List, Union
+
+import requests
 
 
 def time_ago(unix_time):
@@ -111,7 +108,10 @@ def get_random_socks_proxy() -> dict | None:
             proxy = random.choice(lines)
             if check_socks_proxy(proxy):
                 print(f"Proxy {proxy} is working.")
+
                 return {"socks4": proxy}
+            else:
+                print(f"Proxy {proxy} is not working.")
 
             count += 1
 
