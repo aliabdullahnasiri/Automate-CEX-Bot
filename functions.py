@@ -1,7 +1,5 @@
 from datetime import datetime
-from functools import wraps
 import json.tool
-from typing import Callable
 
 import json.scanner
 import requests
@@ -9,43 +7,6 @@ import requests
 
 import urllib.parse
 import json
-
-
-def json_decode_error_handler(func: Callable):  # -> Callable:
-    """
-    Decorator to handle JSONDecodeError exceptions raised by a function.
-
-    This decorator wraps a function and intercepts any JSONDecodeError exceptions that are raised.
-    If such an exception occurs, it returns a string representation of the error instead of propagating the exception.
-    Otherwise, it returns the result of the wrapped function.
-
-    Args:
-        func (Callable): The function to be wrapped.
-
-    Returns:
-        Callable: The wrapped function.
-
-    Raises:
-        None
-
-    Examples:
-        >>> @json_decode_error_handler
-        >>> def get_json(url):
-        >>>     response = requests.get(url)
-        >>>     return response.json()
-        >>>
-        >>> get_json("https://invalid-json-url.com")
-        "Expecting value: line 1 column 1 (char 0)"
-    """
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):  # -> Union[Any, str]:
-        try:
-            return func(*args, **kwargs)
-        except requests.exceptions.JSONDecodeError as e:
-            return f"{e}"
-
-    return wrapper
 
 
 def time_ago(unix_time):
@@ -85,7 +46,6 @@ def round_num(num):
         return str(num)
 
 
-@json_decode_error_handler
 def send_email(subject, text):
     url = "https://sandbox.api.mailtrap.io/api/send/3034355"
 
@@ -104,7 +64,9 @@ def send_email(subject, text):
 
     response = requests.post(url, headers=headers, json=data)
 
-    return response.json()
+    if response.status_code == 200:
+        return response.json()
+    return {}
 
 
 def fragment2dct(fragment: str) -> dict:
