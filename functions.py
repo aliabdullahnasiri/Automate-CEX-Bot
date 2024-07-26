@@ -99,7 +99,7 @@ def check_socks_proxy(proxy) -> Union[bool, None]:
         ...
 
 
-def get_random_socks_proxy() -> dict | None:
+def get_random_socks_proxy() -> Union[dict, None]:
     with open("proxies.txt", "rt", encoding="UTF-8") as file:
         lines: List[str] = [line.strip() for line in file.readlines()]
 
