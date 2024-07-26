@@ -3,7 +3,7 @@ from typing import Literal
 
 import requests
 
-from functions import fragment2dct, send_email, get_random_socks_proxy
+from functions import fragment2dct, get_random_socks_proxy, send_email
 
 
 class CEX(requests.Session):
@@ -97,6 +97,8 @@ class CEX(requests.Session):
 
                 if response.status_code == 200:
                     outputs.append(response.json())
+
+                    break
                 elif response.status_code == 429:
                     print(
                         "Too Many Requests - Please slow down your requests. Try again later."
@@ -156,6 +158,8 @@ class CEX(requests.Session):
 
                 if response.status_code == 200:
                     outputs.append(response.json())
+
+                    break
                 elif response.status_code == 429:
                     print(
                         "Too Many Requests - Please slow down your requests. Try again later."
@@ -198,6 +202,8 @@ class CEX(requests.Session):
 
                     if response.status_code == 200:
                         outputs.append(response.json())
+
+                        break
                     elif response.status_code == 429:
                         print(
                             "Too Many Requests - Please slow down your requests. Try again later."
@@ -252,6 +258,8 @@ class CEX(requests.Session):
                     if response.status_code == 200:
                         result = response.json()
                         outputs.append(result)
+
+                        break
                     elif response.status_code == 429:
                         print(
                             "Too Many Requests - Please slow down your requests. Try again later."
@@ -270,7 +278,6 @@ class CEX(requests.Session):
             tasks = self.get_tasks(auth_data, "ReadyToCheck")
 
             for id in tasks.keys():
-                print(id)
                 data = {
                     "devAuthData": self.get_user_telegram_id(auth_data),
                     "authData": auth_data,
@@ -289,6 +296,8 @@ class CEX(requests.Session):
 
                     if response.status_code == 200:
                         outputs.append(response.json())
+
+                        break
                     elif response.status_code == 429:
                         print(
                             "Too Many Requests - Please slow down your requests. Try again later."
@@ -325,6 +334,8 @@ class CEX(requests.Session):
 
                     if response.status_code == 200:
                         outputs.append(response.json())
+
+                        break
                     elif response.status_code == 429:
                         print(
                             "Too Many Requests - Please slow down your requests. Try again later."
