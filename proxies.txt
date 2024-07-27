@@ -1,6 +1,3 @@
-Free socks proxies from socks-proxy.net
-Updated at 2024-07-26 11:22:02 UTC.
-
 162.241.104.77:52251
 51.83.116.7:43562
 198.199.64.196:46799
