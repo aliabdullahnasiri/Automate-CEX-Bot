@@ -414,14 +414,24 @@ def main():
     users_info = cex.get_users_info()
 
     string = ""
+    allow_params = [
+        "first_name",
+        "username",
+        "sentEmail",
+        "balance",
+        "farmReward",
+        "availableTaps",
+    ]
     for user_info in users_info:
         user_data = user_info.get("data", {})
 
-        user_data.pop("tasks")
-        user_data.pop("inviteUrl")
-        user_data.pop("shareDetails")
-
-        string += "\n".join([f"{key}: {value}" for key, value in user_data.items()])
+        string += "\n".join(
+            [
+                f"{key}: {value}"
+                for key, value in user_data.items()
+                if key in allow_params
+            ]
+        )
         string += "\n\n\n"
 
     send_email("CEX.IO Power Tap", string)
