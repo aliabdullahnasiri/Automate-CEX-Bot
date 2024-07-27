@@ -107,11 +107,7 @@ def get_random_socks_proxy() -> Union[dict, None]:
         while count < 10:
             proxy = random.choice(lines)
             if check_socks_proxy(proxy):
-                print(f"Proxy {proxy} is working.")
-
                 return {"socks4": proxy}
-            else:
-                print(f"Proxy {proxy} is not working.")
 
             count += 1
 
