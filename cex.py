@@ -348,12 +348,49 @@ class CEX(requests.Session):
 
         return outputs
 
+    def claim_from_childrens(self):
+        outputs = []
+        for auth_data in self.auth_data_lst:
+            data = {
+                "devAuthData": self.get_user_telegram_id(auth_data),
+                "authData": auth_data,
+                "data": {},
+            }
+            while True:
+                response = self.post(
+                    "https://cexp.cex.io/api/claimFromChildren",
+                    data=json.dumps(data),
+                    headers={
+                        "Content-Type": "application/json",
+                    },
+                    proxies=get_random_socks_proxy(),
+                )
+
+                if response.status_code == 200:
+                    outputs.append(response.json())
+
+                    break
+                elif response.status_code == 429:
+                    print(
+                        "Too Many Requests - Please slow down your requests. Try again later."
+                    )
+                    print("Executing sleep command for 32 seconds.")
+                    __import__("time").sleep(32)
+                    print("Sleep command completed")
+                else:
+                    break
+
+        return outputs
+
 
 def main():
     cex = CEX()
 
     print("Claim Taps...")
     cex.claim_taps()
+
+    print("Claim form childrens...")
+    cex.claim_from_childrens()
 
     print("Start farming...")
     cex.start_farming()
